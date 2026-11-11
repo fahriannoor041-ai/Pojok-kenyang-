@@ -21,13 +21,13 @@
   <main class="wrap"><div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
     
     <!-- TAMPILAN PELANGGAN -->
-    <section id="customer-view" aria-label="Menu pelanggan"><div class="hero surface"><div class="hero-copy"><p class="eyebrow">Hangat · Segar · Dibuat dengan hati</p><h2 class="display">Selalu ada yang enak untuk menemani harimu.</h2><p>Pilih makanan dan minuman favorit, masukkan ke keranjang, lengkapi data alamat, lalu salin ringkasan pesanan.</p></div><div class="hero-image image-fallback" role="img" aria-label="Ilustrasi hidangan">✺</div></div>
+    <section id="customer-view" aria-label="Menu pelanggan"><div class="hero surface"><div class="hero-copy"><p class="eyebrow">Hangat · Segar · Dibuat dengan hati</p><h2 class="display">Selalu ada yang enak untuk menemani harimu.</h2><p>Pilih makanan dan minuman favorit, masukkan ke keranjang, lengkapi data alamat, lalu kirim pesanan.</p></div><div class="hero-image image-fallback" role="img" aria-label="Ilustrasi hidangan">✺</div></div>
       <div class="section-head"><div><p class="eyebrow">Pilihan kami</p><h2 class="display">Jelajahi menu</h2></div><div id="filters" class="filters" role="group" aria-label="Filter kategori"></div></div>
       <div class="layout"><div><div id="customer-list" class="menu-grid"></div><p id="customer-empty" class="surface empty hidden">Belum ada menu untuk kategori ini.</p></div>
         <aside class="surface panel cart-panel" aria-label="Keranjang pesanan">
           <p class="eyebrow">Pesananmu</p><h2 class="display">Keranjang</h2>
           
-          <!-- Kolom Informasi Pemesan & Alamat -->
+          <!-- KOLOM ALAMAT TAMBAHAN -->
           <div class="field"><label for="customer-name">Nama pelanggan</label><input id="customer-name" type="text" autocomplete="name" maxlength="80" placeholder="Nama Anda"></div>
           <div class="field"><label for="customer-office">Kantor (Opsional)</label><input id="customer-office" type="text" maxlength="100" placeholder="Nama/Lokasi kantor"></div>
           <div class="field"><label for="customer-class">Kelas (Opsional)</label><input id="customer-class" type="text" maxlength="50" placeholder="Contoh: XII IPA 1"></div>
@@ -35,14 +35,14 @@
           
           <div id="cart-list" class="cart-list"></div><p id="cart-empty" class="muted">Belum ada pilihan. Yuk, pilih menu favoritmu.</p>
           <div class="total"><span>Total</span><span id="cart-total" aria-live="polite">Rp0</span></div>
-          <button id="copy-order" class="button primary full" type="button" disabled>Salin ringkasan pesanan</button>
-          <p class="help">Setelah disalin, kirim ringkasan melalui WhatsApp / kontak usaha.</p>
+          <button id="copy-order" class="button primary full" type="button" disabled>Kirim Pesanan &amp; Salin</button>
+          <p class="help">Data otomatis tercatat di Spreadsheet &amp; tersalin ke WhatsApp.</p>
         </aside>
       </div>
     </section>
 
-    <!-- TAMPILAN KELOLA MENU (ADMIN) -->
-    <section id="manager-view" class="manager hidden" aria-label="Kelola menu"><p class="eyebrow">Area pengelola</p><h2 class="display">Kelola menu Anda</h2><p class="manager-disclosure">Hanya admin yang dapat mengubah atau menambah menu di sini.</p><div class="manager-grid"><form id="menu-form" class="surface panel"><h3 id="form-title" class="display">Tambah menu baru</h3><div class="field"><label for="menu-name">Nama menu</label><input id="menu-name" required maxlength="100" placeholder="Contoh: Nasi ayam"></div>
+    <!-- TAMPILAN ADMIN (DIPROTEKSI PIN) -->
+    <section id="manager-view" class="manager hidden" aria-label="Kelola menu"><p class="eyebrow">Area pengelola</p><h2 class="display">Kelola menu Anda</h2><p class="manager-disclosure">Hanya admin yang dapat menambah/menghapus menu di sini.</p><div class="manager-grid"><form id="menu-form" class="surface panel"><h3 id="form-title" class="display">Tambah menu baru</h3><div class="field"><label for="menu-name">Nama menu</label><input id="menu-name" required maxlength="100" placeholder="Contoh: Nasi ayam"></div>
       <div class="field"><label for="menu-category">Kategori</label><input id="menu-category" required maxlength="40" list="category-options" placeholder="Makanan"><datalist id="category-options"></datalist></div>
       <div class="field"><label for="menu-price">Harga (Rp)</label><input id="menu-price" required type="number" min="0" max="100000000" step="1" inputmode="numeric" placeholder="25000"></div>
       <div class="field"><label for="menu-description">Deskripsi</label><textarea id="menu-description" rows="3" maxlength="300" placeholder="Deskripsi singkat"></textarea></div>
@@ -59,7 +59,9 @@
 (() => {
   const $ = id => document.getElementById(id);
   const STORAGE_KEY = 'mama-fahrian-menu-v1';
-  const ADMIN_PIN = '123'; // <-- Ubah PIN Admin sesuai keinginan Anda di sini!
+  const ADMIN_PIN = '123'; // PIN ADMIN KAMU
+  const SCRIPT_URL = 'PASTE_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DISINI'; // <-- MASUKKAN URL /exec GOOGLE APPS SCRIPT DI SINI NANTI
+  
   const MAX_ITEMS = 999;
   const starterMenu = [
     {id:'starter-nasi-goreng',name:'Nasi Goreng Spesial',category:'Makanan',price:25000,description:'Nasi goreng hangat dengan bumbu pilihan.',image_url:'',available:true},
@@ -70,7 +72,7 @@
 
   function message(text,error=false){const box=$('notice');box.textContent=text;box.classList.remove('hidden','error');if(error)box.classList.add('error');}
   function hideMessage(){$('notice').classList.add('hidden');}
-  function saveRecords(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state.records));state.storageAvailable=true;return true;}catch(error){state.storageAvailable=false;message('Penyimpanan browser tidak tersedia.',true);return false;}}
+  function saveRecords(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state.records));state.storageAvailable=true;return true;}catch(error){state.storageAvailable=false;return false;}}
   function loadRecords(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw===null){state.records=starterMenu.map(item=>({...item}));saveRecords();return;}const parsed=JSON.parse(raw);if(!Array.isArray(parsed))throw new Error('Invalid menu data');state.records=parsed.filter(item=>item&&typeof item.id==='string'&&typeof item.name==='string'&&Number.isFinite(Number(item.price))).map(item=>({...item,price:Number(item.price),available:item.available!==false}));}catch(error){state.records=starterMenu.map(item=>({...item}));state.storageAvailable=false;}}
   function validPhoto(url){try{const parsed=new URL(url);return parsed.protocol==='https:';}catch{return false;}}
   function reconcileCart(){const byId=new Map(state.records.map(item=>[item.id,item]));for(const [id] of state.cart)if(!byId.get(id)?.available)state.cart.delete(id);}
@@ -162,12 +164,11 @@
 
   function render(){renderFilters();renderCustomer();renderManager();renderCart();}
 
-  // Pengaman Admin dengan PIN
   function switchView(manager){
     if(manager){
       const pin=prompt('Masukkan PIN Admin:');
       if(pin!==ADMIN_PIN){
-        alert('PIN Admin salah! Akses ditolak.');
+        alert('PIN Admin salah!');
         return;
       }
     }
@@ -199,7 +200,7 @@
     resetForm();saveRecords();render();message('Menu berhasil disimpan.');
   });
 
-  // Ringkasan pesanan dengan Alamat Kantor, Kelas, dan Instansi
+  // Tombol Kirim & Salin Pesanan (Terhubung ke Google Sheets & Clipboard)
   $('copy-order').addEventListener('click',async()=>{
     if(!state.cart.size||!requireName())return;
     const byId=new Map(state.records.map(item=>[item.id,item]));
@@ -224,10 +225,31 @@
     }
     lines.push('',`Total: ${rupiah(total)}`);
     const text=lines.join('\n');
-    
+
+    // KIRIM KE GOOGLE SHEETS VIA APPS SCRIPT
+    if(SCRIPT_URL && SCRIPT_URL.startsWith('https://')){
+      try{
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            office: office,
+            class: cls,
+            institution: institution,
+            orderSummary: text,
+            total: rupiah(total)
+          })
+        });
+      }catch(err){
+        console.error('Gagal kirim otomatis:', err);
+      }
+    }
+
     try{
       await navigator.clipboard.writeText(text);
-      message('Ringkasan tersalin! Silakan paste ke WhatsApp.');
+      message('Pesanan tersimpan ke Sheets & teks tersalin! Silakan paste ke WhatsApp.');
     }catch{
       alert('Gagal menyalin otomatis. Silakan salin manual.');
     }
